@@ -1,0 +1,60 @@
+# The whole stack on one machine: Postgres + pgvector, Keycloak for sign-in, the API, and (with
+# --profile onprem) a local Ollama so no data leaves the network.
+#
+#   docker compose up --build                                   # offline fake models
+#   CLEARLINE_PROVIDER=cohere COHERE_API_KEY=... docker compose up --build
+#   CLEARLINE_PROVIDER=ollama docker compose --profile onprem up --build
+#
+# The Keycloak users and passwords in deploy/keycloak are for local development only.
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: clearline
+      POSTGRES_PASSWORD: clearline
+      POSTGRES_DB: clearline
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clearline"]
+      interval: 3s
+      retries: 20
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://localhost:8081
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+    volumes: ["./deploy/keycloak/clearline-realm.json:/opt/keycloak/data/import/clearline-realm.json:ro"]
+    ports: ["8081:8080"]
+
+  api:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+      keycloak: { condition: service_started }
+    environment:
+      CLEARLINE_ENV: production
+      CLEARLINE_PROVIDER: ${CLEARLINE_PROVIDER:-fake}
+      COHERE_API_KEY: ${COHERE_API_KEY:-}
+      CLEARLINE_OLLAMA_URL: http://ollama:11434
+      CLEARLINE_EMBEDDING_DIM: ${CLEARLINE_EMBEDDING_DIM:-1024}
+      CLEARLINE_STORE: postgres
+      CLEARLINE_DATABASE_URL: postgresql://clearline:clearline@db:5432/clearline
+      CLEARLINE_AUTH_MODE: oidc
+      CLEARLINE_OIDC_ISSUER: http://localhost:8081/realms/clearline
+      CLEARLINE_OIDC_JWKS_URL: http://keycloak:8080/realms/clearline/protocol/openid-connect/certs
+    command: ["sh", "-c", "clearline ingest sample_data && exec uvicorn clearline.main:app --host 0.0.0.0 --port 8000"]
+    ports: ["8000:8000"]
+
+  ollama:
+    image: ollama/ollama:0.5.7
+    profiles: [onprem]
+    volumes: [ollama:/root/.ollama]
+
+volumes:
+  pgdata:
+  ollama:

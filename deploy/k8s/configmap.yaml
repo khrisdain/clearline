@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clearline
+  namespace: clearline
+data:
+  CLEARLINE_ENV: production
+  CLEARLINE_PROVIDER: ollama            # on-prem by default; set to "cohere" (and add the key) for Cohere's API
+  CLEARLINE_OLLAMA_URL: http://ollama.ollama.svc:11434
+  CLEARLINE_EMBEDDING_DIM: "768"
+  CLEARLINE_STORE: postgres
+  CLEARLINE_AUTH_MODE: oidc
+  CLEARLINE_OIDC_ISSUER: https://sso.example.internal/realms/clearline
+  CLEARLINE_OIDC_AUDIENCE: clearline-api

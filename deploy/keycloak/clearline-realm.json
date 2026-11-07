@@ -1,0 +1,210 @@
+{
+  "realm": "clearline",
+  "enabled": true,
+  "sslRequired": "external",
+  "accessTokenLifespan": 300,
+  "roles": {
+    "realm": [
+      {
+        "name": "clearline-admin",
+        "description": "Add and remove documents"
+      },
+      {
+        "name": "clearline-auditor",
+        "description": "Read the audit log"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "staff"
+    },
+    {
+      "name": "finance"
+    },
+    {
+      "name": "security"
+    },
+    {
+      "name": "it"
+    }
+  ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\": [{\"name\": \"username\", \"displayName\": \"${username}\", \"validations\": {\"length\": {\"min\": 3, \"max\": 255}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}}, {\"name\": \"email\", \"displayName\": \"${email}\", \"validations\": {\"email\": {}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}}, {\"name\": \"firstName\", \"displayName\": \"${firstName}\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}}, {\"name\": \"lastName\", \"displayName\": \"${lastName}\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}}], \"unmanagedAttributePolicy\": \"ADMIN_EDIT\"}"
+          ]
+        }
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "clearline-cli",
+      "name": "Clearline (local development)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:8000/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "protocolMappers": [
+        {
+          "name": "audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "clearline-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        },
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "clearance",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "clearance",
+            "claim.name": "clearance",
+            "jsonType.label": "String",
+            "multivalued": "false",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "ana",
+      "enabled": true,
+      "email": "ana@lakeview.example",
+      "emailVerified": true,
+      "firstName": "Ana",
+      "lastName": "Example",
+      "attributes": {
+        "clearance": [
+          "unclassified"
+        ]
+      },
+      "groups": [
+        "/staff"
+      ],
+      "realmRoles": [
+        "default-roles-clearline"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev-only-password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "ben",
+      "enabled": true,
+      "email": "ben@lakeview.example",
+      "emailVerified": true,
+      "firstName": "Ben",
+      "lastName": "Example",
+      "attributes": {
+        "clearance": [
+          "protected-b"
+        ]
+      },
+      "groups": [
+        "/staff",
+        "/finance"
+      ],
+      "realmRoles": [
+        "default-roles-clearline"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev-only-password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "chloe",
+      "enabled": true,
+      "email": "chloe@lakeview.example",
+      "emailVerified": true,
+      "firstName": "Chloe",
+      "lastName": "Example",
+      "attributes": {
+        "clearance": [
+          "protected-b"
+        ]
+      },
+      "groups": [
+        "/staff",
+        "/security",
+        "/it"
+      ],
+      "realmRoles": [
+        "default-roles-clearline",
+        "clearline-auditor"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev-only-password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@lakeview.example",
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "Example",
+      "attributes": {
+        "clearance": [
+          "protected-b"
+        ]
+      },
+      "groups": [
+        "/staff",
+        "/it"
+      ],
+      "realmRoles": [
+        "default-roles-clearline",
+        "clearline-admin"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev-only-password",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

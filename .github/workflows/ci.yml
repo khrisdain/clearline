@@ -1,0 +1,44 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: clearline
+          POSTGRES_PASSWORD: clearline
+          POSTGRES_DB: clearline
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U clearline" --health-interval 3s --health-retries 20
+    env:
+      CLEARLINE_TEST_DATABASE_URL: postgresql://clearline:clearline@localhost:5432/clearline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: Lint
+        run: ruff check src tests evals
+      - name: Types
+        run: mypy src
+      - name: Tests (including Postgres + pgvector)
+        run: pytest -q
+      - name: Eval gate (fails on any cross-access leak)
+        run: python evals/run.py --min-hit 0.9 --out evals/results/offline.md
+      - name: Eval report
+        run: cat evals/results/offline.md >> "$GITHUB_STEP_SUMMARY"
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t clearline:ci .

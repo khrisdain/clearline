@@ -1,0 +1,35 @@
+# Default deny, then allow only what Clearline needs: traffic in from the ingress controller, and out
+# to DNS, Postgres, the identity provider and the model server. For an air-gapped install this is the
+# whole list; with CLEARLINE_PROVIDER=cohere, also allow HTTPS egress to the Cohere API.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: clearline-api
+  namespace: clearline
+spec:
+  podSelector:
+    matchLabels: { app: clearline-api }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: ingress-nginx }
+      ports: [{ port: 8000 }]
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels: { k8s-app: kube-dns }
+      ports: [{ port: 53, protocol: UDP }, { port: 53, protocol: TCP }]
+    - to:
+        - podSelector:
+            matchLabels: { app: postgres }
+      ports: [{ port: 5432 }]
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: keycloak }
+      ports: [{ port: 8080 }, { port: 8443 }]
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: ollama }
+      ports: [{ port: 11434 }]
