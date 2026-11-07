@@ -1,0 +1,26 @@
+{"user": "ana", "question": "How much is the daily meal allowance in Canada?", "expect": "Travel and Expense Policy"}
+{"user": "ana", "question": "What is the mileage rate for using my own car on city business?", "expect": "Travel and Expense Policy"}
+{"user": "ana", "question": "How far in advance do flights have to be booked?", "expect": "Travel and Expense Policy"}
+{"user": "ana", "question": "After how many days are expense claims no longer reimbursed?", "expect": "Travel and Expense Policy"}
+{"user": "ana", "question": "How many days a week can I telework?", "expect": "Telework Policy"}
+{"user": "ana", "question": "Is there an allowance for a home office chair or desk?", "expect": "Telework Policy"}
+{"user": "ana", "question": "Can transit operators work from home?", "expect": "Telework Policy"}
+{"user": "ana", "question": "Where do I report on my first day?", "expect": "New Employee Onboarding Guide"}
+{"user": "ana", "question": "How long is the probation period for new permanent employees?", "expect": "New Employee Onboarding Guide"}
+{"user": "ana", "question": "When does health and dental coverage begin?", "expect": "New Employee Onboarding Guide"}
+{"user": "ana", "question": "How many written quotes do I need for a $50,000 purchase?", "expect": "Procurement Guide"}
+{"user": "ana", "question": "When does a purchase have to go to an open public tender?", "expect": "Procurement Guide"}
+{"user": "ana", "question": "What property tax increase is in the 2027 budget forecast?", "expect": null, "why": "restricted: finance, Protected B"}
+{"user": "ana", "question": "How quickly must a Severity 1 incident be escalated to the CISO?", "expect": null, "why": "restricted: security, Protected B"}
+{"user": "ana", "question": "How long must network passwords be?", "expect": null, "why": "restricted: Protected A"}
+{"user": "ana", "question": "What is the parental leave top-up?", "expect": null, "why": "not in any document"}
+{"user": "ben", "question": "What residential property tax increase does the 2027 budget forecast?", "expect": "2027 Operating Budget Forecast"}
+{"user": "ben", "question": "How much is drawn from the tax stabilisation reserve in 2027?", "expect": "2027 Operating Budget Forecast"}
+{"user": "ben", "question": "How quickly are critical security patches applied to servers?", "expect": "IT Security Standard"}
+{"user": "ben", "question": "Who approves a sole sourcing justification?", "expect": "Procurement Guide"}
+{"user": "ben", "question": "Who is a Severity 1 cyber incident escalated to, and how fast?", "expect": null, "why": "restricted: security"}
+{"user": "chloe", "question": "Within how many minutes is a Severity 1 incident escalated to the CISO?", "expect": "Cyber Incident Response Runbook"}
+{"user": "chloe", "question": "Should I power off a compromised host before capturing memory?", "expect": "Cyber Incident Response Runbook"}
+{"user": "chloe", "question": "Are USB storage devices allowed?", "expect": "IT Security Standard"}
+{"user": "chloe", "question": "How large is the 2027 operating budget?", "expect": null, "why": "restricted: finance"}
+{"user": "chloe", "question": "How many weeks of vacation do employees get?", "expect": null, "why": "not in any document"}
