@@ -1,3 +1,11 @@
+from fastapi.testclient import TestClient
+
+from clearline.api import create_app
+from clearline.auth import Authenticator
+from clearline.config import Settings
+from clearline.service import Clearline
+
+
 def ask(client, question, user="ana"):
     return client.post("/v1/ask", json={"question": question}, headers={"X-Dev-User": user})
 
@@ -58,3 +66,12 @@ def test_the_web_page_and_its_sign_in_config_are_served(client):
 def test_me_describes_the_signed_in_user(client):
     assert client.get("/v1/me", headers={"X-Dev-User": "chloe"}).json() == {
         "subject": "chloe", "clearance": "Protected B", "groups": ["it", "security", "staff"], "admin": False, "auditor": True}
+
+
+def test_the_page_signs_in_through_the_identity_provider_in_oidc_mode():
+    settings = Settings(env="test", provider="fake", store="memory", auth_mode="oidc", embedding_dim=512,
+                        oidc_issuer="https://sso.example.gc.ca/realms/lakeview", oidc_client_id="clearline-web")
+    client = TestClient(create_app(settings, Clearline(settings), Authenticator(settings, key_for_token=lambda token: "")))
+    assert client.get("/ui/config").json() == {
+        "auth_mode": "oidc", "issuer": "https://sso.example.gc.ca/realms/lakeview", "client_id": "clearline-web"}
+    assert client.get("/v1/me").status_code == 401
