@@ -72,6 +72,8 @@ curl -s localhost:8000/v1/ask -H "Authorization: Bearer $TOKEN" -H 'Content-Type
   -d '{"question": "How much is drawn from the tax stabilisation reserve?"}' | jq
 ```
 
+Then open **http://localhost:8000** for the web page: sign in through Keycloak (as any dev user), ask questions, browse the documents you can read, add or delete documents as `admin`, and read and verify the audit log as `chloe`.
+
 **With Cohere models:** `CLEARLINE_PROVIDER=cohere COHERE_API_KEY=... docker compose up --build`
 
 **Fully on-prem with Ollama:** `CLEARLINE_PROVIDER=ollama CLEARLINE_EMBEDDING_DIM=768 docker compose --profile onprem up --build`, then pull the models once: `docker compose exec ollama ollama pull nomic-embed-text && docker compose exec ollama ollama pull llama3.1`.
@@ -83,6 +85,7 @@ curl -s localhost:8000/v1/ask -H "Authorization: Bearer $TOKEN" -H 'Content-Type
 | Method | Path | Who | |
 |---|---|---|---|
 | `POST` | `/v1/ask` | anyone signed in | `{"question": "..."}` → answer, citations, agent steps, `grounded`, latency |
+| `GET` | `/v1/me` | anyone signed in | who you are: clearance, groups, roles |
 | `GET` | `/v1/documents` | anyone signed in | the documents *you* can read |
 | `POST` | `/v1/documents` | `clearline-admin` | add or replace a document with its classification and groups |
 | `DELETE` | `/v1/documents/{id}` | `clearline-admin` | |

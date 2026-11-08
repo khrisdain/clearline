@@ -92,7 +92,11 @@
             "userinfo.token.claim": "false"
           }
         }
-      ]
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:8000/*"
+      }
     }
   ],
   "users": [

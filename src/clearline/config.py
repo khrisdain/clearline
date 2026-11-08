@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     auth_mode: Literal["dev", "oidc"] = "dev"
     oidc_issuer: str = "http://localhost:8081/realms/clearline"
     oidc_audience: str = "clearline-api"
+    oidc_client_id: str = "clearline-cli"  # the public client the web page signs in with (PKCE)
     oidc_jwks_url: str | None = None
     clearance_claim: str = "clearance"
     groups_claim: str = "groups"

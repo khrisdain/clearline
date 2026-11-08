@@ -1,13 +1,14 @@
 """The HTTP API (FastAPI)."""
 
 from dataclasses import asdict
+from importlib.resources import files
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from . import __version__
-from .auth import Authenticator
+from .auth import DEV_USERS, Authenticator
 from .config import Settings, get_settings
 from .models import Answer, AskIn, DocumentIn, DocumentOut, Principal
 from .service import Clearline
@@ -31,6 +32,22 @@ def create_app(settings: Settings | None = None, service: Clearline | None = Non
     def readyz() -> JSONResponse:
         ready = clearline.store.ping()
         return JSONResponse({"store": "ok" if ready else "unavailable"}, status_code=200 if ready else 503)
+
+    @app.get("/", include_in_schema=False)
+    def page() -> HTMLResponse:
+        return HTMLResponse(files("clearline").joinpath("ui/index.html").read_text(encoding="utf-8"))
+
+    @app.get("/ui/config", include_in_schema=False)
+    def ui_config() -> dict[str, Any]:
+        """What the web page needs to sign people in. Nothing secret: the client is public and uses PKCE."""
+        if settings.auth_mode == "dev":
+            return {"auth_mode": "dev", "dev_users": sorted(DEV_USERS)}
+        return {"auth_mode": "oidc", "issuer": settings.oidc_issuer, "client_id": settings.oidc_client_id}
+
+    @app.get("/v1/me")
+    def me(user: User) -> dict[str, Any]:
+        return {"subject": user.subject, "clearance": user.clearance.label, "groups": sorted(user.groups),
+                "admin": user.is_admin, "auditor": user.is_auditor}
 
     @app.post("/v1/ask", response_model=Answer)
     def ask(body: AskIn, user: User) -> Answer:

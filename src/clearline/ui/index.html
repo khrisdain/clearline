@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clearline</title>
+<style>
+  body { max-width: 60rem; margin: 1rem auto; padding: 0 1rem; font-family: sans-serif; line-height: 1.4; }
+  textarea, input[type=text] { width: 100%; box-sizing: border-box; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #999; padding: 0.25rem 0.4rem; text-align: left; vertical-align: top; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .error { color: #b00; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<h1>Clearline</h1>
+<p>Ask questions of your organisation's documents. Answers cite only documents you are cleared to read.</p>
+
+<section id="signin" hidden>
+  <h2>Sign in</h2>
+  <div id="signin-oidc" hidden><button id="login">Sign in with Keycloak</button></div>
+  <div id="signin-dev" hidden>
+    <label>Dev user <select id="dev-user"></select></label> <button id="dev-login">Use this user</button>
+    <p><small>Dev sign-in: no password, the API trusts the X-Dev-User header. Refused in production.</small></p>
+  </div>
+</section>
+
+<div id="app" hidden>
+  <p id="whoami"></p>
+  <button id="logout">Sign out</button>
+
+  <hr>
+  <h2>Ask</h2>
+  <form id="ask-form">
+    <textarea id="question" rows="3" placeholder="e.g. How many days a week can I telework?" required></textarea>
+    <p><button type="submit" id="ask-button">Ask</button></p>
+  </form>
+  <div id="answer"></div>
+
+  <hr>
+  <h2>Documents you can read</h2>
+  <p><button id="refresh-docs">Refresh</button></p>
+  <table>
+    <thead><tr><th>Title</th><th>Classification</th><th>Groups</th><th>Chunks</th><th id="docs-actions" hidden>Actions</th></tr></thead>
+    <tbody id="docs"></tbody>
+  </table>
+
+  <section id="admin" hidden>
+    <hr>
+    <h2>Add a document (admin)</h2>
+    <form id="add-form">
+      <p><label>Title<br><input type="text" id="doc-title" required></label></p>
+      <p><label>Classification
+        <select id="doc-classification">
+          <option value="unclassified">Unclassified</option>
+          <option value="protected_a">Protected A</option>
+          <option value="protected_b">Protected B</option>
+        </select></label></p>
+      <p><label>Groups (comma separated, empty = everyone with the clearance)<br><input type="text" id="doc-groups"></label></p>
+      <p><label>Text (Markdown; # headings become sections)<br><textarea id="doc-text" rows="8" required></textarea></label></p>
+      <p><button type="submit">Add document</button> <span id="add-status"></span></p>
+    </form>
+  </section>
+
+  <section id="auditor" hidden>
+    <hr>
+    <h2>Audit log (auditor)</h2>
+    <p><button id="refresh-audit">Refresh</button> <button id="verify-audit">Verify hash chain</button> <span id="verify-status"></span></p>
+    <table>
+      <thead><tr><th>#</th><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
+      <tbody id="audit"></tbody>
+    </table>
+  </section>
+</div>
+
+<p id="error" class="error"></p>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const store = {
+  get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },
+  set: (k, v) => { try { sessionStorage.setItem(k, v); } catch {} },
+  del: (k) => { try { sessionStorage.removeItem(k); } catch {} },
+};
+let config = null;
+
+function showError(message) { $("error").textContent = message || ""; }
+
+function el(tag, text) { const node = document.createElement(tag); if (text !== undefined) node.textContent = text; return node; }
+
+function row(cells) {
+  const tr = el("tr");
+  for (const cell of cells) {
+    const td = el("td");
+    if (cell instanceof Node) td.append(cell); else td.textContent = cell;
+    tr.append(td);
+  }
+  return tr;
+}
+
+// ---- Sign-in: Keycloak authorization code flow with PKCE (public client, no secret in the page) ----
+
+function b64url(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function randomString() { return b64url(crypto.getRandomValues(new Uint8Array(32))); }
+
+function oidc(path) { return config.issuer.replace(/\/$/, "") + "/protocol/openid-connect/" + path; }
+
+function redirectUri() { return location.origin + "/"; }
+
+async function startLogin() {
+  const verifier = randomString(), state = randomString();
+  store.set("pkce_verifier", verifier);
+  store.set("oauth_state", state);
+  const challenge = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)));
+  const params = new URLSearchParams({
+    client_id: config.client_id, response_type: "code", scope: "openid", redirect_uri: redirectUri(),
+    state, code_challenge: challenge, code_challenge_method: "S256",
+  });
+  location.assign(oidc("auth") + "?" + params);
+}
+
+async function tokenRequest(body) {
+  const response = await fetch(oidc("token"), {
+    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ client_id: config.client_id, ...body }),
+  });
+  if (!response.ok) throw new Error("Sign-in failed (" + response.status + ")");
+  const tokens = await response.json();
+  store.set("access_token", tokens.access_token);
+  if (tokens.refresh_token) store.set("refresh_token", tokens.refresh_token);
+  if (tokens.id_token) store.set("id_token", tokens.id_token);
+}
+
+async function finishLogin() {
+  const params = new URLSearchParams(location.search);
+  if (!params.has("code") && !params.has("error")) return;
+  history.replaceState(null, "", location.pathname);
+  if (params.has("error")) throw new Error("Sign-in failed: " + params.get("error"));
+  if (params.get("state") !== store.get("oauth_state")) throw new Error("Sign-in failed: state mismatch");
+  const verifier = store.get("pkce_verifier");
+  store.del("oauth_state"); store.del("pkce_verifier");
+  await tokenRequest({ grant_type: "authorization_code", code: params.get("code"), redirect_uri: redirectUri(), code_verifier: verifier });
+}
+
+async function refresh() {
+  const token = store.get("refresh_token");
+  if (!token) return false;
+  try { await tokenRequest({ grant_type: "refresh_token", refresh_token: token }); return true; }
+  catch { return false; }
+}
+
+function signedIn() { return config.auth_mode === "dev" ? !!store.get("dev_user") : !!store.get("access_token"); }
+
+function logout() {
+  const idToken = store.get("id_token");
+  for (const k of ["access_token", "refresh_token", "id_token", "dev_user"]) store.del(k);
+  if (config.auth_mode === "oidc" && idToken) {
+    const params = new URLSearchParams({ client_id: config.client_id, id_token_hint: idToken, post_logout_redirect_uri: redirectUri() });
+    location.assign(oidc("logout") + "?" + params);
+  } else {
+    render();
+  }
+}
+
+// ---- API calls ----
+
+async function api(path, options = {}, retried = false) {
+  const headers = { ...(options.headers || {}) };
+  if (config.auth_mode === "dev") headers["X-Dev-User"] = store.get("dev_user");
+  else headers["Authorization"] = "Bearer " + store.get("access_token");
+  if (options.body) headers["Content-Type"] = "application/json";
+  const response = await fetch(path, { ...options, headers });
+  if (response.status === 401 && config.auth_mode === "oidc" && !retried && await refresh()) return api(path, options, true);
+  if (response.status === 401) { logout(); throw new Error("Your session ended. Sign in again."); }
+  if (!response.ok) {
+    let detail = response.statusText;
+    try { detail = JSON.stringify((await response.json()).detail); } catch {}
+    throw new Error(response.status + ": " + detail);
+  }
+  return response.status === 204 ? null : response.json();
+}
+
+let me = null;
+
+async function loadMe() {
+  me = await api("/v1/me");
+  $("whoami").textContent = "Signed in as " + me.subject + " · clearance: " + me.clearance + " · groups: " +
+    (me.groups.join(", ") || "none") + (me.admin ? " · admin" : "") + (me.auditor ? " · auditor" : "");
+  $("admin").hidden = !me.admin;
+  $("docs-actions").hidden = !me.admin;
+  $("auditor").hidden = !me.auditor;
+}
+
+async function loadDocuments() {
+  const docs = await api("/v1/documents");
+  const body = $("docs");
+  body.replaceChildren();
+  for (const d of docs) {
+    const cells = [d.title, d.classification, d.groups.join(", ") || "everyone", String(d.chunks)];
+    if (me.admin) {
+      const button = el("button", "Delete");
+      button.onclick = () => run(async () => {
+        if (!confirm("Delete \"" + d.title + "\"?")) return;
+        await api("/v1/documents/" + encodeURIComponent(d.id), { method: "DELETE" });
+        await loadDocuments();
+      });
+      cells.push(button);
+    }
+    body.append(row(cells));
+  }
+  if (!docs.length) body.append(row(["No documents you can read."]));
+}
+
+async function ask() {
+  const question = $("question").value.trim();
+  if (!question) return;
+  const out = $("answer");
+  out.replaceChildren(el("p", "Thinking…"));
+  $("ask-button").disabled = true;
+  try {
+    const a = await api("/v1/ask", { method: "POST", body: JSON.stringify({ question }) });
+    out.replaceChildren();
+    out.append(el("h3", "Answer"), el("pre", a.answer));
+    out.append(el("p", (a.grounded ? "Grounded: every claim cites a passage you can read." :
+      "Not grounded: no valid citation, so treat this answer with care.") + " · " + a.latency_ms + " ms"));
+    if (a.citations.length) {
+      out.append(el("h3", "Sources"));
+      const list = el("ol");
+      for (const c of a.citations) {
+        const item = el("li");
+        item.value = c.marker;
+        item.append(el("strong", c.title + " › " + c.section), document.createTextNode(" (" + c.classification + ")"), el("pre", c.snippet));
+        list.append(item);
+      }
+      out.append(list);
+    }
+    if (a.steps.length) {
+      const details = el("details");
+      details.append(el("summary", "Agent steps (" + a.steps.length + ")"));
+      const list = el("ol");
+      for (const s of a.steps) list.append(el("li", s.tool + " " + JSON.stringify(s.arguments) + " → " + s.results + " passages"));
+      details.append(list);
+      out.append(details);
+    }
+    if (me.auditor) loadAudit().catch(() => {});
+  } catch (error) {
+    out.replaceChildren();
+    throw error;
+  } finally {
+    $("ask-button").disabled = false;
+  }
+}
+
+async function addDocument() {
+  const groups = $("doc-groups").value.split(",").map((g) => g.trim().toLowerCase()).filter(Boolean);
+  const doc = await api("/v1/documents", { method: "POST", body: JSON.stringify({
+    title: $("doc-title").value, classification: $("doc-classification").value, groups, text: $("doc-text").value, source: "web",
+  }) });
+  $("add-status").textContent = "Added \"" + doc.title + "\" (" + doc.chunks + " chunks).";
+  $("add-form").reset();
+  await loadDocuments();
+}
+
+async function loadAudit() {
+  const entries = await api("/v1/audit?limit=200");
+  const body = $("audit");
+  body.replaceChildren();
+  for (const e of entries) body.append(row([String(e.seq), e.at, e.subject, e.action, el("pre", JSON.stringify(e.detail))]));
+}
+
+async function verifyAudit() {
+  const result = await api("/v1/audit/verify");
+  $("verify-status").textContent = result.intact ? "Intact: no entry has been changed or removed." :
+    "Broken at entry " + result.first_broken_entry + ".";
+}
+
+// Run an async action and show any error.
+function run(action) {
+  showError("");
+  return Promise.resolve().then(action).catch((error) => showError(error.message));
+}
+
+async function render() {
+  const inside = signedIn();
+  $("signin").hidden = inside;
+  $("app").hidden = !inside;
+  $("signin-oidc").hidden = config.auth_mode !== "oidc";
+  $("signin-dev").hidden = config.auth_mode !== "dev";
+  if (!inside) return;
+  await loadMe();
+  await loadDocuments();
+  if (me.auditor) await loadAudit();
+}
+
+async function main() {
+  config = await (await fetch("/ui/config")).json();
+  if (config.auth_mode === "dev") {
+    for (const name of config.dev_users) $("dev-user").append(new Option(name, name));
+  } else {
+    await finishLogin();
+  }
+  $("login").onclick = () => run(startLogin);
+  $("dev-login").onclick = () => run(() => { store.set("dev_user", $("dev-user").value); return render(); });
+  $("logout").onclick = logout;
+  // preventDefault must run synchronously, before run() defers the action.
+  $("ask-form").onsubmit = (event) => { event.preventDefault(); run(ask); };
+  $("add-form").onsubmit = (event) => { event.preventDefault(); run(addDocument); };
+  $("refresh-docs").onclick = () => run(loadDocuments);
+  $("refresh-audit").onclick = () => run(loadAudit);
+  $("verify-audit").onclick = () => run(verifyAudit);
+  await render();
+}
+
+run(main);
+</script>
+</body>
+</html>

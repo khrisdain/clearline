@@ -47,3 +47,14 @@ def test_only_auditors_read_the_audit_log_and_it_verifies(client):
 
 def test_unknown_dev_user_is_unauthorised(client):
     assert ask(client, "hi", user="mallory").status_code == 401
+
+
+def test_the_web_page_and_its_sign_in_config_are_served(client):
+    page = client.get("/")
+    assert page.status_code == 200 and "<title>Clearline</title>" in page.text
+    assert client.get("/ui/config").json() == {"auth_mode": "dev", "dev_users": ["admin", "ana", "ben", "chloe"]}
+
+
+def test_me_describes_the_signed_in_user(client):
+    assert client.get("/v1/me", headers={"X-Dev-User": "chloe"}).json() == {
+        "subject": "chloe", "clearance": "Protected B", "groups": ["it", "security", "staff"], "admin": False, "auditor": True}
