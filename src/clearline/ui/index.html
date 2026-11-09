@@ -4,374 +4,278 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Clearline</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b7285'/%3E%3Cpath d='M8 21h16M8 15h11M8 9h7' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2316181d'/%3E%3Cpath d='M4 11h8M4 8h6M4 5h3' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E">
 <style>
   /* No external fonts or scripts: the page has to work on-prem and air-gapped. */
   :root {
-    --bg: #f3f6f9;
-    --surface: #ffffff;
-    --surface-2: #f7f9fb;
-    --border: #dde3ea;
-    --text: #15202b;
-    --muted: #5b6b7b;
-    --brand: #0b7285;
-    --brand-strong: #075564;
-    --brand-soft: #e3f4f6;
-    --accent: #e8590c;
-    --header: #0d1b2a;
-    --header-text: #e8eef4;
-    --header-muted: #9fb3c8;
-    --shadow: 0 1px 2px rgba(16, 32, 48, 0.06), 0 4px 16px rgba(16, 32, 48, 0.06);
-
-    --u-fg: #1b6e45; --u-bg: #e2f5ea; --u-line: #2f9e66;
-    --pa-fg: #8a5300; --pa-bg: #fdf0d5; --pa-line: #e0a100;
-    --pb-fg: #a31d36; --pb-bg: #fce4e8; --pb-line: #d6334f;
-
-    --ok-fg: #1b6e45; --ok-bg: #e2f5ea;
-    --warn-fg: #8a5300; --warn-bg: #fdf0d5;
-    --err-fg: #a31d36; --err-bg: #fce4e8;
-    --radius: 12px;
+    --bg: #ffffff;
+    --text: #16181d;
+    --muted: #63676f;
+    --faint: #9a9ea6;
+    --rule: #e3e4e7;
+    --rule-strong: #16181d;
+    --link: #1f4fd1;
+    --field: #ffffff;
+    --u: #18794e;
+    --pa: #9a5b00;
+    --pb: #b4232c;
+    --bad: #b4232c;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --serif: "Iowan Old Style", Charter, "Bitstream Charter", Georgia, serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0b1520;
-      --surface: #111e2b;
-      --surface-2: #152433;
-      --border: #24384b;
-      --text: #e6edf3;
-      --muted: #94a7ba;
-      --brand: #3bc0d4;
-      --brand-strong: #6fd6e5;
-      --brand-soft: #0f3340;
-      --accent: #ff8a4c;
-      --header: #07101a;
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
-      --u-fg: #6fdc9f; --u-bg: #12382a; --u-line: #3fbf7f;
-      --pa-fg: #ffcc66; --pa-bg: #3d2e0b; --pa-line: #e0a100;
-      --pb-fg: #ff8fa3; --pb-bg: #44141f; --pb-line: #ff5c7a;
-      --ok-fg: #6fdc9f; --ok-bg: #12382a;
-      --warn-fg: #ffcc66; --warn-bg: #3d2e0b;
-      --err-fg: #ff8fa3; --err-bg: #44141f;
+      --bg: #121316;
+      --text: #e7e8ea;
+      --muted: #a0a4ab;
+      --faint: #6d717a;
+      --rule: #2a2c31;
+      --rule-strong: #e7e8ea;
+      --link: #8fb0ff;
+      --field: #17181c;
+      --u: #5fc596;
+      --pa: #e2a94a;
+      --pb: #ff7a80;
+      --bad: #ff7a80;
       color-scheme: dark;
     }
   }
 
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 var(--sans); }
   button, input, select, textarea { font: inherit; color: inherit; }
-  h1, h2, h3 { line-height: 1.25; margin: 0; }
-  h2 { font-size: 1.15rem; }
-  h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 650; }
-  code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; }
-
-  /* ---- Header ---- */
-  header.top {
-    background: var(--header); color: var(--header-text);
-    border-bottom: 3px solid var(--brand);
-  }
-  .top-inner { max-width: 72rem; margin: 0 auto; padding: 0.8rem 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-  .brand { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 1.15rem; letter-spacing: 0.01em; }
-  .brand small { display: block; font-weight: 400; font-size: 0.75rem; color: var(--header-muted); letter-spacing: 0; }
-  .logo { width: 34px; height: 34px; flex: none; }
-  .who { margin-left: auto; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
-  .avatar {
-    width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 700;
-    background: var(--brand); color: #fff; text-transform: uppercase;
-  }
-  .who-name { font-weight: 600; }
-  .who-groups { font-size: 0.78rem; color: var(--header-muted); }
-
-  nav.tabs { max-width: 72rem; margin: 0 auto; padding: 0 1rem; display: flex; gap: 0.25rem; overflow-x: auto; }
-  nav.tabs button {
-    background: none; border: 0; color: var(--header-muted); padding: 0.55rem 0.9rem; cursor: pointer;
-    border-radius: 8px 8px 0 0; font-weight: 600; white-space: nowrap;
-  }
-  nav.tabs button:hover { color: var(--header-text); background: rgba(255, 255, 255, 0.06); }
-  nav.tabs button[aria-selected="true"] { color: var(--header); background: var(--bg); }
-  @media (prefers-color-scheme: dark) { nav.tabs button[aria-selected="true"] { color: var(--text); } }
-
-  main { max-width: 72rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
-
-  /* ---- Building blocks ---- */
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.25rem; }
-  .stack > * + * { margin-top: 1rem; }
-  .row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  h1, h2, h3 { margin: 0; line-height: 1.25; font-weight: 600; }
+  h1 { font-size: 1.5rem; letter-spacing: -0.01em; }
+  h2 { font-size: 1.05rem; }
+  h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+  p { margin: 0; }
+  a { color: var(--link); }
   .muted { color: var(--muted); }
-  .spacer { flex: 1; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .mono { font-family: var(--mono); font-size: 0.8rem; }
 
+  .wrap { max-width: 56rem; margin: 0 auto; padding: 0 1.25rem; }
+
+  /* Header: a wordmark, plain text links, a rule. */
+  header { border-bottom: 1px solid var(--rule); }
+  .bar { display: flex; align-items: baseline; gap: 1.75rem; flex-wrap: wrap; padding-top: 1rem; }
+  .wordmark { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em; }
+  nav { display: flex; gap: 1.25rem; }
+  nav button {
+    background: none; border: 0; padding: 0 0 0.7rem; margin-bottom: -1px; cursor: pointer; color: var(--muted);
+    border-bottom: 2px solid transparent;
+  }
+  nav button:hover { color: var(--text); }
+  nav button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--rule-strong); }
+  .user { margin-left: auto; color: var(--muted); font-size: 0.88rem; }
+  .user strong { color: var(--text); font-weight: 600; }
+  .linklike { background: none; border: 0; padding: 0; color: var(--link); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .status { padding-top: 0.35rem; padding-bottom: 0.6rem; color: var(--faint); }
+  .status .dot { display: inline-block; width: 6px; height: 6px; margin-right: 0.4rem; vertical-align: 1px; background: var(--pa); }
+  .status.live .dot { background: var(--u); }
+
+  main { padding: 2rem 0 4rem; }
+  section > * + * { margin-top: 1.25rem; }
+  .head { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+  .head .end { margin-left: auto; display: flex; gap: 1rem; }
+
+  /* Clearance: coloured small caps, no fills. */
+  .level { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+  .level.unclassified { color: var(--u); }
+  .level.protected-a { color: var(--pa); }
+  .level.protected-b { color: var(--pb); }
+
+  /* Controls */
   .btn {
-    display: inline-flex; align-items: center; gap: 0.4rem; border: 1px solid transparent; border-radius: 9px;
-    padding: 0.55rem 1rem; font-weight: 600; cursor: pointer; background: var(--brand); color: #fff;
-    transition: background 0.15s, transform 0.05s;
+    border: 1px solid var(--rule-strong); background: var(--rule-strong); color: var(--bg); padding: 0.45rem 1rem;
+    cursor: pointer; border-radius: 3px; font-weight: 500;
   }
-  @media (prefers-color-scheme: dark) { .btn { color: #04222a; } }
-  .btn:hover { background: var(--brand-strong); }
-  .btn:active { transform: translateY(1px); }
-  .btn:disabled { opacity: 0.6; cursor: progress; }
-  .btn.ghost { background: transparent; color: var(--brand); border-color: var(--border); }
-  .btn.ghost:hover { background: var(--brand-soft); }
-  .btn.on-dark { background: transparent; color: var(--header-text); border-color: rgba(255, 255, 255, 0.25); padding: 0.35rem 0.8rem; }
-  .btn.on-dark:hover { background: rgba(255, 255, 255, 0.1); }
-  .btn.danger { background: transparent; color: var(--err-fg); border-color: var(--border); padding: 0.3rem 0.7rem; font-size: 0.85rem; }
-  .btn.danger:hover { background: var(--err-bg); }
-  .btn.big { padding: 0.75rem 1.4rem; font-size: 1rem; }
-
-  label.field { display: block; font-weight: 600; font-size: 0.9rem; }
-  label.field > span.hint { font-weight: 400; color: var(--muted); }
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.5; cursor: progress; }
+  .btn.quiet { background: transparent; color: var(--text); border-color: var(--rule); }
+  .btn.quiet:hover { border-color: var(--muted); opacity: 1; }
+  label { display: block; font-size: 0.88rem; font-weight: 500; }
+  label .hint { font-weight: 400; color: var(--muted); }
   input[type=text], select, textarea {
-    width: 100%; margin-top: 0.35rem; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 9px;
-    background: var(--surface-2); outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+    display: block; width: 100%; margin-top: 0.35rem; padding: 0.5rem 0.6rem; background: var(--field);
+    border: 1px solid var(--rule); border-radius: 3px; outline: none;
   }
-  input[type=text]:focus, select:focus, textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+  input[type=text]:focus, select:focus, textarea:focus { border-color: var(--rule-strong); }
   textarea { resize: vertical; }
 
-  .badge {
-    display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.12rem 0.55rem; border-radius: 999px;
-    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; border: 1px solid transparent;
+  /* Ask */
+  #question { font-size: 1.05rem; min-height: 4.5rem; }
+  .ask-row { display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+  .ask-row .btn { margin-left: auto; }
+  .examples { font-size: 0.88rem; color: var(--muted); max-width: 40rem; }
+  .examples button { background: none; border: 0; padding: 0; color: var(--link); cursor: pointer; text-align: left; }
+  .examples button:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .examples span + span::before { content: " · "; color: var(--faint); }
+
+  .answer { border-top: 1px solid var(--rule); padding-top: 1.5rem; }
+  .answer > * + * { margin-top: 1rem; }
+  .asked { color: var(--muted); font-size: 0.9rem; }
+  .answer-text { font-family: var(--serif); font-size: 1.2rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .answer-text.declined { color: var(--muted); }
+  mark.cited {
+    background: none; color: inherit; text-decoration: underline; text-decoration-color: var(--faint);
+    text-decoration-thickness: 1px; text-underline-offset: 4px; cursor: pointer;
   }
-  .badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-  .badge.plain::before { display: none; }
-  .c-unclassified { color: var(--u-fg); background: var(--u-bg); }
-  .c-protected-a { color: var(--pa-fg); background: var(--pa-bg); }
-  .c-protected-b { color: var(--pb-fg); background: var(--pb-bg); }
-  .chip { display: inline-block; padding: 0.08rem 0.5rem; border-radius: 6px; font-size: 0.78rem; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); margin: 0.1rem 0.15rem 0.1rem 0; }
-  .role { color: var(--brand); background: var(--brand-soft); border-color: transparent; }
-
-  .alert { border-radius: 10px; padding: 0.7rem 0.9rem; font-weight: 500; }
-  .alert.error { color: var(--err-fg); background: var(--err-bg); }
-  .alert.ok { color: var(--ok-fg); background: var(--ok-bg); }
-  .alert.warn { color: var(--warn-fg); background: var(--warn-bg); }
-
-  /* ---- Sign in ---- */
-  .signin-wrap {
-    min-height: 100vh; display: grid; place-items: center; padding: 1.5rem 1rem;
-    background:
-      radial-gradient(60rem 30rem at 10% -10%, rgba(11, 114, 133, 0.35), transparent 60%),
-      radial-gradient(50rem 30rem at 110% 110%, rgba(232, 89, 12, 0.22), transparent 60%),
-      var(--header);
-  }
-  .signin { width: min(28rem, 100%); text-align: center; padding: 2rem 1.75rem; }
-  .signin .logo { width: 56px; height: 56px; margin: 0 auto 0.75rem; display: block; }
-  .signin h1 { font-size: 1.6rem; }
-  .signin p { margin: 0.5rem 0 0; }
-  .levels { display: flex; justify-content: center; gap: 0.4rem; flex-wrap: wrap; margin: 1.25rem 0; }
-  .signin select { text-align: left; }
-
-  /* ---- Ask ---- */
-  .ask-box textarea { font-size: 1.05rem; min-height: 5.5rem; background: var(--surface); }
-  .examples { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-  .example {
-    border: 1px dashed var(--border); background: var(--surface-2); color: var(--muted); border-radius: 999px;
-    padding: 0.25rem 0.75rem; font-size: 0.85rem; cursor: pointer;
-  }
-  .example:hover { border-style: solid; border-color: var(--brand); color: var(--brand); }
-
-  .answer-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
-  @media (max-width: 860px) { .answer-grid { grid-template-columns: 1fr; } }
-  .answer-text { font-size: 1.08rem; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .answer-card { border-top: 4px solid var(--brand); }
-  .answer-card.ungrounded { border-top-color: var(--pa-line); }
-  .question-echo { font-weight: 600; color: var(--muted); }
+  mark.cited:hover, mark.cited.lit { text-decoration-color: var(--link); text-decoration-thickness: 2px; }
   sup.cite {
-    display: inline-grid; place-items: center; min-width: 1.35rem; height: 1.35rem; padding: 0 0.3rem; border-radius: 6px;
-    background: var(--brand-soft); color: var(--brand); font-size: 0.75rem; font-weight: 700; vertical-align: 0.35em;
-    cursor: pointer; margin: 0 0.1rem; line-height: 1;
+    font-family: var(--sans); font-size: 0.65em; color: var(--link); cursor: pointer; padding: 0 0.1em; font-weight: 600;
   }
-  sup.cite:hover { background: var(--brand); color: #fff; }
+  sup.cite::before { content: "["; }
+  sup.cite::after { content: "]"; }
+  .facts { font-size: 0.82rem; color: var(--muted); }
+  .facts span + span::before { content: "  ·  "; white-space: pre; color: var(--faint); }
+  .facts .bad { color: var(--bad); }
 
-  .source { border-left: 4px solid var(--border); padding: 0.75rem 0.9rem; border-radius: 0 10px 10px 0; background: var(--surface-2); transition: box-shadow 0.2s; }
-  .source.l-unclassified { border-left-color: var(--u-line); }
-  .source.l-protected-a { border-left-color: var(--pa-line); }
-  .source.l-protected-b { border-left-color: var(--pb-line); }
-  .source.flash { box-shadow: 0 0 0 3px var(--brand-soft), 0 0 0 5px var(--brand); }
-  .source-head { display: flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap; }
-  .source-num { font-weight: 800; color: var(--brand); }
-  .source-title { font-weight: 650; }
-  .source-section { color: var(--muted); font-size: 0.85rem; }
-  .source blockquote { margin: 0.5rem 0 0; color: var(--text); font-size: 0.92rem; opacity: 0.9; }
+  ol.sources { list-style: none; padding: 0; margin: 0.6rem 0 0; border-top: 1px solid var(--rule); }
+  ol.sources li { display: grid; grid-template-columns: 2rem 1fr; padding: 0.85rem 0; border-bottom: 1px solid var(--rule); }
+  ol.sources li.lit { background: color-mix(in srgb, var(--link) 7%, transparent); }
+  .n { font-family: var(--mono); font-size: 0.8rem; color: var(--link); padding-top: 0.15rem; }
+  .source-title { font-weight: 600; }
+  .source-meta { font-size: 0.82rem; color: var(--muted); }
+  .source-meta .level { margin-left: 0.5rem; }
+  .snippet { margin-top: 0.35rem; font-family: var(--serif); font-size: 0.98rem; color: var(--text); }
 
-  .steps { list-style: none; padding: 0; margin: 0.5rem 0 0; }
-  .steps li { position: relative; padding: 0.15rem 0 0.6rem 1.5rem; font-size: 0.9rem; }
-  .steps li::before { content: ""; position: absolute; left: 0.3rem; top: 0.5rem; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
-  .steps li:not(:last-child)::after { content: ""; position: absolute; left: 0.55rem; top: 1.1rem; bottom: -0.2rem; width: 2px; background: var(--border); }
+  ol.trace { margin: 0.6rem 0 0; padding-left: 1.2rem; font-size: 0.9rem; }
+  ol.trace li { padding: 0.15rem 0; }
+  ol.trace .mono { color: var(--muted); display: block; }
 
-  .thinking { display: flex; align-items: center; gap: 0.75rem; color: var(--muted); }
-  .spinner { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--brand-soft); border-top-color: var(--brand); animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { text-align: left; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+       border-bottom: 1px solid var(--rule-strong); padding: 0 0.75rem 0.5rem 0; }
+  td { border-bottom: 1px solid var(--rule); padding: 0.6rem 0.75rem 0.6rem 0; vertical-align: top; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td pre { margin: 0; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .scroll { overflow-x: auto; }
+  .empty { color: var(--muted); padding: 1.5rem 0; }
+  .delete { background: none; border: 0; padding: 0; color: var(--bad); cursor: pointer; font-size: 0.85rem; }
+  .delete:hover { text-decoration: underline; }
+  .summary { color: var(--muted); font-size: 0.9rem; }
+  .summary b { color: var(--text); font-weight: 600; }
 
-  .empty { text-align: center; padding: 2rem 1rem; color: var(--muted); }
-  .empty .big { font-size: 2rem; }
+  .form { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.5rem; max-width: 44rem; }
+  .form .full { grid-column: 1 / -1; }
+  @media (max-width: 640px) { .form { grid-template-columns: 1fr; } }
+  .note { font-size: 0.9rem; }
+  .note.ok { color: var(--u); }
+  .note.bad { color: var(--bad); }
 
-  /* ---- Tables ---- */
-  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
-  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
-  th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); background: var(--surface-2); }
-  th, td { padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-  tr:last-child td { border-bottom: 0; }
-  tbody tr:hover td { background: var(--surface-2); }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  td pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--muted); }
+  /* Sign in: a narrow column of text. */
+  .signin { max-width: 26rem; margin: 18vh auto 0; padding: 0 1.25rem; }
+  .signin > * + * { margin-top: 1rem; }
+  .signin .levels { font-size: 0.85rem; color: var(--muted); }
 
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.75rem; }
-  .stat { padding: 0.9rem 1rem; }
-  .stat .n { font-size: 1.6rem; font-weight: 750; }
-  .stat .l { font-size: 0.8rem; color: var(--muted); }
-  .stat.u { border-top: 3px solid var(--u-line); }
-  .stat.pa { border-top: 3px solid var(--pa-line); }
-  .stat.pb { border-top: 3px solid var(--pb-line); }
-  .stat.all { border-top: 3px solid var(--brand); }
-
-  .action { font-weight: 650; }
-  .action-ask { color: var(--brand); }
-  .action-ingest { color: var(--u-fg); }
-  .action-delete { color: var(--err-fg); }
-
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
-  .form-grid .full { grid-column: 1 / -1; }
-
-  .toast {
-    position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%); max-width: calc(100% - 2rem);
-    box-shadow: var(--shadow); z-index: 10;
+  #error {
+    position: fixed; left: 0; right: 0; bottom: 0; padding: 0.7rem 1.25rem; background: var(--bg);
+    border-top: 2px solid var(--bad); color: var(--bad); font-size: 0.9rem; z-index: 5;
   }
 </style>
 </head>
 <body>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="logo" viewBox="0 0 32 32">
-    <rect width="32" height="32" rx="8" fill="#0b7285"/>
-    <path d="M8 21h16M8 15h11M8 9h7" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-    <circle cx="24" cy="9" r="3" fill="#ff8a4c"/>
-  </symbol>
-</svg>
-
-<!-- ================= Sign in ================= -->
-<div id="signin" class="signin-wrap" hidden>
-  <div class="card signin">
-    <svg class="logo"><use href="#logo"/></svg>
-    <h1>Clearline</h1>
-    <p class="muted">Ask questions of your organisation's documents. Every answer cites its sources, and only documents you are cleared to read.</p>
-    <div class="levels">
-      <span class="badge c-unclassified">Unclassified</span>
-      <span class="badge c-protected-a">Protected A</span>
-      <span class="badge c-protected-b">Protected B</span>
-    </div>
-    <div id="signin-oidc" hidden>
-      <button class="btn big" id="login">Sign in with your organisation account</button>
-      <p class="muted"><small>You'll be sent to Keycloak to sign in. Your clearance and groups come from your account.</small></p>
-    </div>
-    <div id="signin-dev" hidden class="stack">
-      <label class="field">Dev user <select id="dev-user"></select></label>
-      <button class="btn big" id="dev-login">Continue</button>
-      <p class="muted"><small>Development sign-in: no password. Refused in production.</small></p>
-    </div>
+<!-- Sign in -->
+<div id="signin" class="signin" hidden>
+  <h1>Clearline</h1>
+  <p>Ask questions of your organisation's documents. Answers cite their sources, and only use documents you are cleared to read.</p>
+  <p class="levels">Classifications: <span class="level unclassified">Unclassified</span> · <span class="level protected-a">Protected A</span> · <span class="level protected-b">Protected B</span></p>
+  <div id="signin-oidc" hidden>
+    <button class="btn" id="login">Sign in</button>
+    <p class="muted" style="margin-top:0.75rem;font-size:0.88rem">Through your organisation's Keycloak. Your clearance and groups come from your account.</p>
+  </div>
+  <div id="signin-dev" hidden>
+    <label>Development user <select id="dev-user"></select></label>
+    <p style="margin-top:0.75rem"><button class="btn" id="dev-login">Continue</button></p>
+    <p class="muted" style="margin-top:0.75rem;font-size:0.88rem">No password in development mode. Refused in production.</p>
   </div>
 </div>
 
-<!-- ================= App ================= -->
+<!-- App -->
 <div id="app" hidden>
-  <header class="top">
-    <div class="top-inner">
-      <div class="brand">
-        <svg class="logo"><use href="#logo"/></svg>
-        <div>Clearline<small>Permission-aware answers from your documents</small></div>
-      </div>
-      <div class="who">
-        <div class="avatar" id="avatar"></div>
-        <div>
-          <div class="row"><span class="who-name" id="who-name"></span><span id="who-clearance"></span></div>
-          <div class="who-groups" id="who-groups"></div>
-        </div>
-        <button class="btn on-dark" id="logout">Sign out</button>
-      </div>
+  <header>
+    <div class="wrap bar">
+      <span class="wordmark">Clearline</span>
+      <nav role="tablist">
+        <button role="tab" data-tab="ask" aria-selected="true">Ask</button>
+        <button role="tab" data-tab="docs" aria-selected="false">Documents</button>
+        <button role="tab" data-tab="admin" aria-selected="false" hidden>Add document</button>
+        <button role="tab" data-tab="audit" aria-selected="false" hidden>Audit log</button>
+      </nav>
+      <span class="user"><strong id="who-name"></strong> <span id="who-clearance"></span> <span id="who-groups"></span>
+        &nbsp; <button class="linklike" id="logout">Sign out</button></span>
     </div>
-    <nav class="tabs" role="tablist">
-      <button role="tab" data-tab="ask" aria-selected="true">Ask</button>
-      <button role="tab" data-tab="docs" aria-selected="false">Documents</button>
-      <button role="tab" data-tab="admin" aria-selected="false" hidden>Add document</button>
-      <button role="tab" data-tab="audit" aria-selected="false" hidden>Audit log</button>
-    </nav>
   </header>
+  <div class="wrap status mono" id="model-status" hidden><span class="dot"></span><span id="model-name"></span></div>
 
-  <main>
-    <!-- Ask -->
-    <section data-panel="ask" class="stack">
-      <form id="ask-form" class="card ask-box stack">
-        <label class="field" for="question"><h2>What do you want to know?</h2></label>
-        <textarea id="question" rows="3" placeholder="Ask a question in plain language…" required></textarea>
-        <div class="row">
-          <div class="examples" id="examples"></div>
-          <span class="spacer"></span>
-          <button type="submit" class="btn big" id="ask-button">Ask Clearline</button>
+  <main class="wrap">
+    <section data-panel="ask">
+      <form id="ask-form">
+        <label for="question" class="sr">Question</label>
+        <textarea id="question" rows="3" placeholder="Ask a question in plain language" required></textarea>
+        <div class="ask-row" style="margin-top:0.75rem">
+          <p class="examples" id="examples">Try: </p>
+          <button type="submit" class="btn" id="ask-button">Ask</button>
         </div>
       </form>
       <div id="answer"></div>
     </section>
 
-    <!-- Documents -->
-    <section data-panel="docs" class="stack" hidden>
-      <div class="row">
-        <div>
-          <h2>Documents you can read</h2>
-          <p class="muted" style="margin:0.2rem 0 0">Documents above your clearance or outside your groups don't appear here, or anywhere else.</p>
-        </div>
-        <span class="spacer"></span>
-        <button class="btn ghost" id="refresh-docs">Refresh</button>
+    <section data-panel="docs" hidden>
+      <div class="head">
+        <h2>Documents you can read</h2>
+        <div class="end"><button class="btn quiet" id="refresh-docs">Refresh</button></div>
       </div>
-      <div class="stats" id="doc-stats"></div>
-      <div class="table-wrap">
+      <p class="summary" id="doc-summary"></p>
+      <div class="scroll">
         <table>
-          <thead><tr><th>Title</th><th>Classification</th><th>Groups</th><th style="text-align:right">Chunks</th><th id="docs-actions" hidden></th></tr></thead>
+          <thead><tr><th>Title</th><th>Classification</th><th>Groups</th><th class="num">Passages</th><th id="docs-actions" hidden></th></tr></thead>
           <tbody id="docs"></tbody>
         </table>
       </div>
     </section>
 
-    <!-- Admin -->
     <section data-panel="admin" hidden>
-      <form id="add-form" class="card stack">
-        <div>
-          <h2>Add a document</h2>
-          <p class="muted" style="margin:0.2rem 0 0">It is split into passages and becomes searchable right away, only by people its classification and groups allow.</p>
-        </div>
-        <div class="form-grid">
-          <label class="field full">Title <input type="text" id="doc-title" required placeholder="e.g. Snow Clearing Schedule"></label>
-          <label class="field">Classification
-            <select id="doc-classification">
-              <option value="unclassified">Unclassified</option>
-              <option value="protected_a">Protected A</option>
-              <option value="protected_b">Protected B</option>
-            </select></label>
-          <label class="field">Groups <span class="hint">(comma separated; empty = everyone with the clearance)</span>
-            <input type="text" id="doc-groups" placeholder="e.g. finance, it"></label>
-          <label class="field full">Text <span class="hint">(Markdown; # headings become sections)</span>
-            <textarea id="doc-text" rows="10" required placeholder="# Section&#10;Text…"></textarea></label>
-        </div>
-        <div class="row"><button type="submit" class="btn">Add document</button><span id="add-status"></span></div>
+      <div>
+        <h2>Add a document</h2>
+        <p class="muted" style="margin-top:0.3rem">It is split into passages and becomes searchable immediately, by people its classification and groups allow.</p>
+      </div>
+      <form id="add-form" class="form">
+        <label class="full">Title <input type="text" id="doc-title" required></label>
+        <label>Classification
+          <select id="doc-classification">
+            <option value="unclassified">Unclassified</option>
+            <option value="protected_a">Protected A</option>
+            <option value="protected_b">Protected B</option>
+          </select></label>
+        <label>Groups <span class="hint">comma separated, empty for everyone</span>
+          <input type="text" id="doc-groups"></label>
+        <label class="full">Text <span class="hint">Markdown; # headings become sections</span>
+          <textarea id="doc-text" rows="12" required></textarea></label>
+        <div class="full"><button type="submit" class="btn">Add document</button> <span id="add-status" class="note"></span></div>
       </form>
     </section>
 
-    <!-- Audit -->
-    <section data-panel="audit" class="stack" hidden>
-      <div class="row">
-        <div>
-          <h2>Audit log</h2>
-          <p class="muted" style="margin:0.2rem 0 0">Every question, ingestion and deletion. Entries are hash-chained, so any edit or removal is detected.</p>
+    <section data-panel="audit" hidden>
+      <div class="head">
+        <h2>Audit log</h2>
+        <div class="end">
+          <button class="btn quiet" id="refresh-audit">Refresh</button>
+          <button class="btn quiet" id="verify-audit">Verify hash chain</button>
         </div>
-        <span class="spacer"></span>
-        <button class="btn ghost" id="refresh-audit">Refresh</button>
-        <button class="btn" id="verify-audit">Verify hash chain</button>
       </div>
-      <div id="verify-status"></div>
-      <div class="table-wrap">
+      <p class="muted">Every question, ingestion and deletion. Entries are hash-chained, so editing or removing one is detected.</p>
+      <p id="verify-status" class="note"></p>
+      <div class="scroll">
         <table>
-          <thead><tr><th>#</th><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
+          <thead><tr><th class="num">#</th><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
           <tbody id="audit"></tbody>
         </table>
       </div>
@@ -379,7 +283,7 @@
   </main>
 </div>
 
-<div id="error" class="alert error toast" role="alert" hidden></div>
+<div id="error" role="alert" hidden></div>
 
 <script>
 "use strict";
@@ -418,8 +322,8 @@ function el(tag, attrs = {}, ...children) {
   return node;
 }
 
-function levelKey(label) { return String(label).toLowerCase().replace(/\s+/g, "-"); }
-function badge(label) { return el("span", { class: "badge c-" + levelKey(label) }, label); }
+function level(label) { return el("span", { class: "level " + String(label).toLowerCase().replace(/\s+/g, "-") }, label); }
+function plural(n, word) { return n + " " + word + (n === 1 ? "" : "s"); }
 
 // ---- Sign-in: Keycloak authorization code flow with PKCE (public client, no secret in the page) ----
 
@@ -506,7 +410,7 @@ async function api(path, options = {}, retried = false) {
 // ---- Tabs ----
 
 function showTab(name) {
-  for (const tab of document.querySelectorAll("nav.tabs button")) tab.setAttribute("aria-selected", String(tab.dataset.tab === name));
+  for (const tab of document.querySelectorAll("nav button")) tab.setAttribute("aria-selected", String(tab.dataset.tab === name));
   for (const panel of document.querySelectorAll("[data-panel]")) panel.hidden = panel.dataset.panel !== name;
   if (name === "docs") run(loadDocuments);
   if (name === "audit") run(loadAudit);
@@ -516,11 +420,10 @@ function showTab(name) {
 
 async function loadMe() {
   me = await api("/v1/me");
-  $("avatar").textContent = me.subject.slice(0, 1);
   $("who-name").textContent = me.subject;
-  $("who-clearance").replaceChildren(badge(me.clearance));
+  $("who-clearance").replaceChildren(level(me.clearance));
   const extras = [...me.groups, me.admin ? "admin" : null, me.auditor ? "auditor" : null].filter(Boolean);
-  $("who-groups").textContent = extras.length ? extras.join(" · ") : "no groups";
+  $("who-groups").textContent = extras.length ? "· " + extras.join(", ") : "";
   document.querySelector('[data-tab="admin"]').hidden = !me.admin;
   document.querySelector('[data-tab="audit"]').hidden = !me.auditor;
   $("docs-actions").hidden = !me.admin;
@@ -529,19 +432,17 @@ async function loadMe() {
 async function loadDocuments() {
   const docs = await api("/v1/documents");
   const count = (label) => docs.filter((d) => d.classification === label).length;
-  $("doc-stats").replaceChildren(
-    el("div", { class: "card stat all" }, el("div", { class: "n" }, docs.length), el("div", { class: "l" }, "documents you can read")),
-    el("div", { class: "card stat u" }, el("div", { class: "n" }, count("Unclassified")), el("div", { class: "l" }, "Unclassified")),
-    el("div", { class: "card stat pa" }, el("div", { class: "n" }, count("Protected A")), el("div", { class: "l" }, "Protected A")),
-    el("div", { class: "card stat pb" }, el("div", { class: "n" }, count("Protected B")), el("div", { class: "l" }, "Protected B")),
-  );
+  $("doc-summary").replaceChildren(el("b", {}, plural(docs.length, "document")), ": ",
+    count("Unclassified") + " Unclassified, " + count("Protected A") + " Protected A, " + count("Protected B") + " Protected B. ",
+    "Anything above your clearance or outside your groups is left out here and everywhere else.");
   const body = $("docs");
   body.replaceChildren();
   for (const d of docs) {
-    const groups = d.groups.length ? d.groups.map((g) => el("span", { class: "chip" }, g)) : [el("span", { class: "muted" }, "Everyone")];
-    const cells = [el("td", {}, el("strong", {}, d.title)), el("td", {}, badge(d.classification)), el("td", {}, groups), el("td", { class: "num" }, d.chunks)];
+    const cells = [el("td", {}, d.title), el("td", {}, level(d.classification)),
+      el("td", { class: d.groups.length ? "" : "muted" }, d.groups.length ? d.groups.join(", ") : "everyone"),
+      el("td", { class: "num" }, d.chunks)];
     if (me.admin) {
-      cells.push(el("td", {}, el("button", { class: "btn danger", onclick: () => run(async () => {
+      cells.push(el("td", { class: "num" }, el("button", { class: "delete", onclick: () => run(async () => {
         if (!confirm("Delete \"" + d.title + "\"? This can't be undone.")) return;
         await api("/v1/documents/" + encodeURIComponent(d.id), { method: "DELETE" });
         await loadDocuments();
@@ -552,29 +453,67 @@ async function loadDocuments() {
   if (!docs.length) body.append(el("tr", {}, el("td", { colspan: "5", class: "empty" }, "No documents you can read.")));
 }
 
-// Answer text with [n] markers turned into clickable citation pills.
-function answerNodes(text) {
+function sourceRow(marker) { return document.getElementById("source-" + marker); }
+
+function light(markers, on) { for (const n of markers) sourceRow(n)?.classList.toggle("lit", on); }
+
+function jumpTo(marker) {
+  const row = sourceRow(marker);
+  if (!row) return;
+  row.scrollIntoView({ behavior: "smooth", block: "center" });
+  light([marker], true);
+  setTimeout(() => light([marker], false), 1200);
+}
+
+function cite(marker) {
+  return el("sup", { class: "cite", title: "Source " + marker, onclick: () => jumpTo(marker) }, marker);
+}
+
+// The answer with each cited span underlined and its source numbers after it. Works for both
+// citation modes: native spans (no markers in the text) and [n] markers (rendered as the numbers).
+function answerNodes(a) {
+  const text = a.answer;
+  const markers = a.citation_mode === "markers" ? [...text.matchAll(/\[(\d+)\]/g)] : [];
+  const cuts = new Set([0, text.length]);
+  for (const span of a.spans) { cuts.add(span.start); cuts.add(span.end); }
+  for (const m of markers) { cuts.add(m.index); cuts.add(m.index + m[0].length); }
+  const points = [...cuts].sort((x, y) => x - y);
   const nodes = [];
-  let last = 0;
-  for (const match of text.matchAll(/\[(\d+)\]/g)) {
-    nodes.push(text.slice(last, match.index));
-    const marker = match[1];
-    nodes.push(el("sup", { class: "cite", title: "Source " + marker, onclick: () => {
-      const target = document.getElementById("source-" + marker);
-      if (!target) return;
-      target.scrollIntoView({ behavior: "smooth", block: "center" });
-      target.classList.add("flash");
-      setTimeout(() => target.classList.remove("flash"), 1200);
-    } }, marker));
-    last = match.index + match[0].length;
+  for (let i = 0; i < points.length - 1; i++) {
+    const from = points[i], to = points[i + 1];
+    const marker = markers.find((m) => m.index === from);
+    if (marker) { nodes.push(cite(Number(marker[1]))); continue; }
+    if (markers.some((m) => m.index < from && from < m.index + m[0].length)) continue;
+    const piece = text.slice(from, to);
+    const span = a.spans.find((sp) => sp.start <= from && to <= sp.end);
+    if (span) {
+      const mark = el("mark", { class: "cited", title: "Source " + span.markers.join(", "), onclick: () => jumpTo(span.markers[0]) }, piece);
+      mark.onmouseenter = () => light(span.markers, true);
+      mark.onmouseleave = () => light(span.markers, false);
+      nodes.push(mark);
+    } else {
+      nodes.push(piece);
+    }
+    if (a.citation_mode === "native") for (const sp of a.spans) if (sp.end === to) sp.markers.forEach((n) => nodes.push(cite(n)));
   }
-  nodes.push(text.slice(last));
   return nodes;
 }
 
+function stages(r) {
+  if (!r) return null;
+  const parts = [];
+  if (r.dense) parts.push("dense " + r.dense);
+  if (r.keyword) parts.push("keyword " + r.keyword);
+  if (r.dense && r.keyword) parts.push("fused " + r.fused);
+  if (r.reranked) parts.push("reranked");
+  parts.push("kept " + r.kept);
+  return el("span", { class: "mono" }, parts.join(" → "));
+}
+
 function describeStep(step) {
-  if (step.tool === "search_documents") return ["Searched for ", el("strong", {}, "“" + (step.arguments.query || "") + "”")];
-  if (step.tool === "read_document") return ["Opened document ", el("code", {}, step.arguments.document_id || "")];
+  if (step.tool === "search_documents") return ["Searched for “" + (step.arguments.query || "") + "”", stages(step.retrieval)];
+  if (step.tool === "read_document") return ["Opened document ", el("code", { class: "mono" }, step.arguments.document_id || ""),
+    el("span", { class: "mono" }, plural(step.results, "passage"))];
   return [step.tool + " " + JSON.stringify(step.arguments)];
 }
 
@@ -582,33 +521,34 @@ async function ask() {
   const question = $("question").value.trim();
   if (!question) return;
   const out = $("answer");
-  out.replaceChildren(el("div", { class: "card thinking" }, el("div", { class: "spinner" }), "Searching the documents you can read…"));
+  out.replaceChildren(el("div", { class: "answer" }, el("p", { class: "muted" }, "Searching the documents you can read…")));
   $("ask-button").disabled = true;
   try {
     const a = await api("/v1/ask", { method: "POST", body: JSON.stringify({ question }) });
-    const status = a.grounded
-      ? el("span", { class: "badge plain", style: "color:var(--ok-fg);background:var(--ok-bg)" }, "✓ Grounded in " + a.citations.length + " source" + (a.citations.length === 1 ? "" : "s"))
-      : el("span", { class: "badge plain", style: "color:var(--warn-fg);background:var(--warn-bg)" }, "No supporting source");
-    const main = el("div", { class: "card answer-card stack" + (a.grounded ? "" : " ungrounded") },
-      el("div", { class: "question-echo" }, question),
-      el("div", { class: "answer-text" }, answerNodes(a.answer)),
-      el("div", { class: "row" }, status, el("span", { class: "muted", style: "font-size:0.85rem" }, a.latency_ms + " ms")),
-    );
-    const side = el("div", { class: "stack" });
+    const facts = el("p", { class: "facts" },
+      a.grounded ? el("span", {}, "Cited from " + plural(a.citations.length, "source")) : el("span", { class: "bad" }, "No supporting source"),
+      a.grounded ? el("span", { title: "Share of the answer inside a cited span" }, Math.round(a.coverage * 100) + "% of the answer cited") : null,
+      a.model ? el("span", {}, a.model + (a.citation_mode === "native" ? ", native citations" : "")) : null,
+      el("span", {}, a.latency_ms + " ms"));
+    const block = el("div", { class: "answer" },
+      el("p", { class: "asked" }, question),
+      el("div", { class: "answer-text" + (a.grounded ? "" : " declined") }, answerNodes(a)),
+      facts);
     if (a.citations.length) {
-      side.append(el("div", { class: "card stack" }, el("h3", {}, "Sources"), a.citations.map((c) =>
-        el("div", { class: "source l-" + levelKey(c.classification), id: "source-" + c.marker },
-          el("div", { class: "source-head" }, el("span", { class: "source-num" }, "[" + c.marker + "]"),
-            el("span", { class: "source-title" }, c.title), badge(c.classification)),
-          el("div", { class: "source-section" }, c.section),
-          el("blockquote", {}, c.snippet)))));
+      block.append(el("div", {}, el("h3", {}, "Sources"), el("ol", { class: "sources" }, a.citations.map((c) =>
+        el("li", { id: "source-" + c.marker },
+          el("span", { class: "n" }, c.marker),
+          el("div", {},
+            el("div", {}, el("span", { class: "source-title" }, c.title)),
+            el("div", { class: "source-meta" }, c.section, level(c.classification)),
+            el("p", { class: "snippet" }, c.snippet)))))));
     }
     if (a.steps.length) {
-      side.append(el("div", { class: "card" }, el("h3", {}, "What the agent did"),
-        el("ol", { class: "steps" }, a.steps.map((s) => el("li", {}, describeStep(s), el("span", { class: "muted" }, " → " + s.results + " passage" + (s.results === 1 ? "" : "s")))),
-          el("li", {}, a.grounded ? "Answered with citations" : "Found nothing it could cite, so it declined"))));
+      block.append(el("div", {}, el("h3", {}, "What the agent did"), el("ol", { class: "trace" },
+        a.steps.map((s) => el("li", {}, describeStep(s))),
+        el("li", {}, a.grounded ? "Answered from the passages above." : "Found nothing it could cite, so it declined."))));
     }
-    out.replaceChildren(side.childElementCount ? el("div", { class: "answer-grid" }, main, side) : main);
+    out.replaceChildren(block);
   } catch (error) {
     out.replaceChildren();
     throw error;
@@ -622,7 +562,8 @@ async function addDocument() {
   const doc = await api("/v1/documents", { method: "POST", body: JSON.stringify({
     title: $("doc-title").value, classification: $("doc-classification").value, groups, text: $("doc-text").value, source: "web",
   }) });
-  $("add-status").replaceChildren(el("span", { class: "alert ok" }, "Added “" + doc.title + "” as " + doc.classification + " (" + doc.chunks + " passages)."));
+  $("add-status").className = "note ok";
+  $("add-status").textContent = "Added “" + doc.title + "” as " + doc.classification + ", " + plural(doc.chunks, "passage") + ".";
   $("add-form").reset();
 }
 
@@ -635,18 +576,19 @@ async function loadAudit() {
     body.append(el("tr", {},
       el("td", { class: "num muted" }, e.seq),
       el("td", { style: "white-space:nowrap" }, isNaN(when) ? e.at : when.toLocaleString()),
-      el("td", {}, el("strong", {}, e.subject)),
-      el("td", {}, el("span", { class: "action action-" + e.action }, e.action)),
-      el("td", {}, el("pre", {}, JSON.stringify(e.detail, null, 1)))));
+      el("td", {}, e.subject),
+      el("td", {}, e.action),
+      el("td", {}, el("pre", {}, JSON.stringify(e.detail)))));
   }
   if (!entries.length) body.append(el("tr", {}, el("td", { colspan: "5", class: "empty" }, "No entries yet.")));
 }
 
 async function verifyAudit() {
   const result = await api("/v1/audit/verify");
-  $("verify-status").replaceChildren(result.intact
-    ? el("div", { class: "alert ok" }, "✓ Chain intact: no entry has been changed or removed.")
-    : el("div", { class: "alert error" }, "✗ Chain broken at entry " + result.first_broken_entry + ": the log has been tampered with."));
+  $("verify-status").className = "note " + (result.intact ? "ok" : "bad");
+  $("verify-status").textContent = result.intact
+    ? "Chain intact. No entry has been changed or removed."
+    : "Chain broken at entry " + result.first_broken_entry + ". The log has been altered.";
 }
 
 function run(action) {
@@ -665,17 +607,31 @@ async function render() {
   showTab("ask");
 }
 
+function showModels() {
+  const m = config.models;
+  if (!m) return;
+  const live = m.provider !== "fake";
+  const status = $("model-status");
+  status.hidden = false;
+  status.classList.toggle("live", live);
+  $("model-name").textContent = live
+    ? m.provider + ": " + m.chat + ", " + m.embed + (m.rerank ? ", " + m.rerank : "") + " · " + m.retrieval + " retrieval"
+    : "Offline stand-in models · " + m.retrieval + " retrieval";
+  status.title = live ? "" : "Set CLEARLINE_PROVIDER=cohere and COHERE_API_KEY to use Cohere's models.";
+}
+
 async function main() {
   config = await (await fetch("/ui/config")).json();
+  showModels();
   if (config.auth_mode === "dev") {
     for (const name of config.dev_users) $("dev-user").append(new Option(name, name));
   } else {
     await finishLogin();
   }
   for (const text of EXAMPLES) {
-    $("examples").append(el("button", { type: "button", class: "example", onclick: () => { $("question").value = text; run(ask); } }, text));
+    $("examples").append(el("span", {}, el("button", { type: "button", onclick: () => { $("question").value = text; run(ask); } }, text)));
   }
-  for (const tab of document.querySelectorAll("nav.tabs button")) tab.onclick = () => showTab(tab.dataset.tab);
+  for (const tab of document.querySelectorAll("nav button")) tab.onclick = () => showTab(tab.dataset.tab);
   $("login").onclick = () => run(startLogin);
   $("dev-login").onclick = () => run(() => { store.set("dev_user", $("dev-user").value); return render(); });
   $("logout").onclick = logout;
