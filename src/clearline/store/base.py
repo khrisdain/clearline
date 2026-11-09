@@ -13,6 +13,10 @@ class Store(Protocol):
         restricted text never leaves the store for someone without access."""
         ...
 
+    def keyword_search(self, query: str, principal: Principal, k: int) -> list[Hit]:
+        """Best keyword (full-text) matches the principal may read, under the same access filter."""
+        ...
+
     def documents(self, principal: Principal) -> list[tuple[Document, int]]:
         """Documents the principal may read, with their chunk counts."""
         ...

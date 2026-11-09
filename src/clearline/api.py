@@ -40,9 +40,13 @@ def create_app(settings: Settings | None = None, service: Clearline | None = Non
     @app.get("/ui/config", include_in_schema=False)
     def ui_config() -> dict[str, Any]:
         """What the web page needs to sign people in. Nothing secret: the client is public and uses PKCE."""
+        provider = clearline.provider
+        models = {"provider": provider.name, "chat": provider.model, "embed": provider.embed_model,
+                  "rerank": provider.rerank_model if settings.rerank else None, "retrieval": settings.retrieval,
+                  "citations": "native" if provider.native_citations else "markers"}
         if settings.auth_mode == "dev":
-            return {"auth_mode": "dev", "dev_users": sorted(DEV_USERS)}
-        return {"auth_mode": "oidc", "issuer": settings.oidc_issuer, "client_id": settings.oidc_client_id}
+            return {"auth_mode": "dev", "dev_users": sorted(DEV_USERS), "models": models}
+        return {"auth_mode": "oidc", "issuer": settings.oidc_issuer, "client_id": settings.oidc_client_id, "models": models}
 
     @app.get("/v1/me")
     def me(user: User) -> dict[str, Any]:

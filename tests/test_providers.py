@@ -68,3 +68,16 @@ def test_ollama_chat_and_cosine_rerank():
     assert provider.rerank("cats", ["dogs", "cats"], 2)[0][0] == 1
     reply = provider.chat([Message("user", "cats?")], [])
     assert reply.tool_calls[0].name == "search_documents" and reply.tool_calls[0].id == "call_0"
+
+
+def test_cohere_reply_with_native_citations_becomes_spans():
+    class Citing(FakeCohere):
+        def chat(self, **kwargs):
+            self.calls.append(("chat", kwargs))
+            citation = NS(start=10, end=19, text="$98 a day", sources=[NS(type="tool", id="passage-1", tool_output={})])
+            return NS(message=NS(tool_calls=None, tool_plan=None, content=[NS(type="text", text="Meals are $98 a day.")],
+                                 citations=[citation]))
+
+    reply = CohereProvider(cohere_settings(), Citing()).chat([Message("user", "meals?")], [])
+    assert reply.content == "Meals are $98 a day."
+    assert [(s.start, s.end, s.text, s.markers) for s in reply.spans] == [(10, 19, "$98 a day", [1])]

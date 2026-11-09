@@ -13,14 +13,14 @@ $ clearline ask "What property tax increase is forecast for 2027?" --as ana     
 
 ## What it does
 
-- **Answers with citations.** A tool-using agent searches (and re-searches with its own phrasing), opens whole documents when it needs to, and answers only from numbered passages it was shown. Citations to passages it never saw are stripped; an answer with no valid citation is flagged `grounded: false`.
+- **Answers with span-level citations.** A tool-using agent searches (and re-searches with its own phrasing), opens whole documents when it needs to, and answers only from passages it was shown. With Cohere, passages go to Command A as documents and come back as *native* citations: which characters of the answer each passage supports. Other models cite with `[n]` markers, which are turned into the same spans. Either way, citations to passages the model never saw are dropped, the share of the answer that is cited is reported as `coverage`, and an answer with no valid citation is flagged `grounded: false`.
 - **Enforces access in the database, not the prompt.** Every chunk carries its document's classification (Unclassified, Protected A, Protected B) and groups. The access check is part of the same SQL statement as the vector search, so restricted text never leaves Postgres for someone without access: it can't reach the reranker, the model, or the logs. A forbidden document is indistinguishable from one that doesn't exist.
-- **Two-stage retrieval.** A wide vector search (pgvector HNSW, cosine) narrowed by a reranker (Cohere Rerank) to the few passages worth the model's attention, with a relevance floor so weak matches lead to "not found" rather than a guess.
+- **Hybrid, two-stage retrieval.** Dense search (pgvector HNSW, cosine) and keyword search (BM25 in memory, Postgres full text in production), each under the same access filter, merged with reciprocal rank fusion, then narrowed by a reranker (Cohere Rerank) to the few passages worth the model's attention, with a relevance floor so weak matches lead to "not found" rather than a guess. Keyword search catches exact identifiers, form numbers and rare terms that embeddings blur.
 - **Runs where the data lives.** Swap Cohere for a local Ollama server with one setting, for on-prem and air-gapped installs where nothing may leave the network. The Kubernetes manifests deny all egress except to the database, the identity provider and the model server.
 - **Signs people in with the organisation's identity provider.** OIDC bearer tokens from Keycloak, verified against the realm's JWKS (issuer, audience, expiry, RS256). Clearance comes from a user attribute, groups from group membership, admin/auditor rights from realm roles.
 - **Leaves an audit trail that can't be quietly edited.** Every question, ingestion and deletion is logged with who, when and which documents an answer drew on. Entries are hash-chained, so changing or deleting any past entry is detected (`GET /v1/audit/verify`).
 - **Masks personal information.** Social Insurance Numbers (Luhn-checked), emails and phone numbers are redacted before a question reaches the model or the audit log.
-- **Measured, not assumed.** An eval harness scores retrieval (hit@k, MRR), cited answers, correct refusals and cross-boundary leakage on a fixed question set, and CI fails the build if a single restricted passage leaks.
+- **Measured, not assumed.** An eval harness scores retrieval (hit@k, MRR), cited answers, correct refusals and cross-boundary leakage on a fixed question set, and CI fails the build if a single restricted passage leaks. A [retrieval study](#retrieval-study) compares first-stage methods and embedding sizes and precisions with bootstrap confidence intervals.
 
 ## Architecture
 
@@ -85,6 +85,7 @@ Then open **http://localhost:8000** for the web page: sign in through Keycloak (
 | Method | Path | Who | |
 |---|---|---|---|
 | `POST` | `/v1/ask` | anyone signed in | `{"question": "..."}` → answer, citations, agent steps, `grounded`, latency |
+| `GET` | `/ui/config` | public | how the page signs in, and which models and retrieval mode are running |
 | `GET` | `/v1/me` | anyone signed in | who you are: clearance, groups, roles |
 | `GET` | `/v1/documents` | anyone signed in | the documents *you* can read |
 | `POST` | `/v1/documents` | `clearline-admin` | add or replace a document with its classification and groups |
@@ -114,14 +115,34 @@ CLEARLINE_PROVIDER=cohere COHERE_API_KEY=... python evals/run.py --out evals/res
 
 The fake "model" is a word-overlap stand-in that keeps CI deterministic and keyless; it misses paraphrases such as *mileage* vs *kilometre*, which is what the four misses are. Run the same script with `CLEARLINE_PROVIDER=cohere` for real model quality.
 
+## Retrieval study
+
+[`evals/retrieval_study.py`](evals/retrieval_study.py) answers two design questions with numbers instead of defaults:
+
+1. **Which first stage?** BM25, dense, hybrid (RRF), and each followed by Rerank.
+2. **How big and how precise should the vectors be?** Embed v4 is trained Matryoshka-style, so 256, 512, 1024 and 1536 dimensions all work, and the API returns float, int8 and binary embeddings in one call. The study crosses size with precision (float32, int8, binary, and binary shortlisting with float rescoring) and prints the storage each costs per million passages next to its retrieval quality.
+
+Metrics are nDCG@10, Recall@20 (what the reranker gets to see) and MRR@10, with 95% bootstrap confidence intervals over queries. Embeddings and rerank results are cached in `evals/.cache`, so re-runs and new configurations don't pay twice, and rate limits are retried with backoff.
+
+```bash
+python evals/retrieval_study.py                                     # offline: checks the harness
+CLEARLINE_PROVIDER=cohere COHERE_API_KEY=... python evals/retrieval_study.py --out evals/results/retrieval-lakeview.md
+
+# A public benchmark (BEIR SciFact: 5,183 abstracts, 300 test queries) for numbers worth comparing
+curl -LO https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/scifact.zip && unzip -q scifact.zip -d data
+CLEARLINE_PROVIDER=cohere COHERE_API_KEY=... python evals/retrieval_study.py --beir data/scifact --out evals/results/retrieval-scifact.md
+```
+
+The Lakeview sample (7 documents, 19 answerable questions) is too small to separate the methods; every one finds the right document. It is there to exercise the pipeline. Use SciFact (or any BEIR-format folder) for the comparison.
+
 ## Tests
 
 ```bash
-pytest                                                             # 45 tests, offline
+pytest                                                             # 63 tests, offline
 docker compose up -d db && CLEARLINE_TEST_DATABASE_URL=postgresql://clearline:clearline@localhost:5432/clearline pytest
 ```
 
-Covers chunking, the access matrix for every dev user against every question, the agent loop (multi-search, step limit, dropped hallucinated citations, PII masking), token verification (expired, wrong audience, wrong issuer, forged signature), audit tamper detection, the API's role checks, the Cohere and Ollama adapters (against stand-in clients), and the same access guarantees against real Postgres + pgvector. CI runs lint (ruff), types (mypy), the tests against a pgvector service, the eval gate and a Docker build.
+Covers chunking, the access matrix for every dev user against every question, BM25 and rank fusion, span citations (markers and native Cohere ones), the retrieval study's metrics and quantisation, the agent loop (multi-search, step limit, dropped hallucinated citations, PII masking), token verification (expired, wrong audience, wrong issuer, forged signature), audit tamper detection, the API's role checks, the Cohere and Ollama adapters (against stand-in clients), and the same access guarantees against real Postgres + pgvector. CI runs lint (ruff), types (mypy), the tests against a pgvector service, the eval gate and a Docker build.
 
 ## Design notes
 

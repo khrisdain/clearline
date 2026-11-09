@@ -92,12 +92,22 @@ class ToolCall:
     arguments: dict[str, Any]
 
 
+class Span(BaseModel):
+    """A stretch of the answer, [start, end) in characters, supported by the numbered passages in `markers`."""
+
+    start: int
+    end: int
+    text: str
+    markers: list[int]
+
+
 @dataclass
 class Message:
     role: Role
     content: str = ""
     tool_calls: list[ToolCall] = field(default_factory=list)
     tool_call_id: str | None = None
+    spans: list[Span] = field(default_factory=list)  # citations the model returned natively (Cohere), if any
 
 
 @dataclass
@@ -143,6 +153,7 @@ class Step(BaseModel):
     tool: str
     arguments: dict[str, Any]
     results: int
+    retrieval: dict[str, int | bool] | None = None  # per-stage counts for a search: dense, keyword, fused, kept
 
 
 class Answer(BaseModel):
@@ -151,3 +162,7 @@ class Answer(BaseModel):
     steps: list[Step]
     grounded: bool
     latency_ms: int
+    spans: list[Span] = Field(default_factory=list)
+    coverage: float = 0.0  # share of the answer's characters inside a cited span
+    citation_mode: Literal["native", "markers"] = "markers"
+    model: str = ""

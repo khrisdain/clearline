@@ -9,6 +9,10 @@ EmbedKind = Literal["document", "query"]
 
 class Provider(Protocol):
     name: str
+    model: str  # the chat model answering questions
+    embed_model: str
+    rerank_model: str
+    native_citations: bool  # True if chat replies carry span citations (Message.spans) instead of [n] markers
 
     def embed(self, texts: list[str], kind: EmbedKind) -> list[list[float]]:
         """One vector per text. Queries and documents may be embedded differently."""

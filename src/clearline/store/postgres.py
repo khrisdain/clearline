@@ -1,4 +1,5 @@
-"""Postgres with pgvector: an HNSW index for cosine search, access labels on every chunk row.
+"""Postgres with pgvector: an HNSW index for cosine search, a full-text index for keyword search,
+and access labels on every chunk row.
 
 The access filter is part of the same SQL statement as the vector search, so the database never
 returns a chunk the caller may not read. With a selective filter, HNSW can come back short of
@@ -50,6 +51,9 @@ def schema(dim: int) -> str:
     CREATE INDEX IF NOT EXISTS chunks_embedding ON chunks USING hnsw (embedding vector_cosine_ops);
     CREATE INDEX IF NOT EXISTS chunks_document ON chunks (document_id, position);
     CREATE INDEX IF NOT EXISTS chunks_groups ON chunks USING gin (groups);
+    ALTER TABLE chunks ADD COLUMN IF NOT EXISTS tsv tsvector
+      GENERATED ALWAYS AS (to_tsvector('english', title || ' ' || section || ' ' || text)) STORED;
+    CREATE INDEX IF NOT EXISTS chunks_tsv ON chunks USING gin (tsv);
     """
 
 
@@ -96,6 +100,19 @@ class PostgresStore:
                            1 - (embedding <=> %(q)s) AS score
                     FROM chunks WHERE {ACCESS} ORDER BY embedding <=> %(q)s LIMIT %(k)s""",  # noqa: S608 - constant SQL
                 params,
+            ).fetchall()
+        return [Hit(chunk=_chunk(row), score=float(row[8])) for row in rows]
+
+    def keyword_search(self, query: str, principal: Principal, k: int) -> list[Hit]:
+        # Any of the query's words may match (OR), ranked by ts_rank with length normalisation:
+        # questions are long and an AND of every word would rarely match anything.
+        with self.pool.connection() as conn:
+            rows = conn.execute(
+                f"""SELECT id, document_id, title, section, text, classification, groups, position,
+                           ts_rank(tsv, q, 1) AS score
+                    FROM chunks, (SELECT replace(plainto_tsquery('english', %(text)s)::text, ' & ', ' | ')::tsquery AS q) query
+                    WHERE tsv @@ q AND {ACCESS} ORDER BY score DESC LIMIT %(k)s""",  # noqa: S608 - constant SQL
+                {"text": query, "k": k, **_access(principal)},
             ).fetchall()
         return [Hit(chunk=_chunk(row), score=float(row[8])) for row in rows]
 

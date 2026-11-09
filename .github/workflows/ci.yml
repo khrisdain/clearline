@@ -36,6 +36,8 @@ jobs:
         run: python evals/run.py --min-hit 0.9 --out evals/results/offline.md
       - name: Eval report
         run: cat evals/results/offline.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Retrieval study (offline smoke run)
+        run: python evals/retrieval_study.py --dims 256,1024 --out evals/results/retrieval-offline.md >> "$GITHUB_STEP_SUMMARY"
 
   image:
     runs-on: ubuntu-latest

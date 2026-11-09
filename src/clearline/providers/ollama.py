@@ -17,9 +17,13 @@ from .base import EmbedKind
 
 class OllamaProvider:
     name = "ollama"
+    native_citations = False
 
     def __init__(self, settings: Settings, client: httpx.Client | None = None) -> None:
         self.settings = settings
+        self.model = settings.ollama_chat_model
+        self.embed_model = settings.ollama_embed_model
+        self.rerank_model = f"cosine on {settings.ollama_embed_model}"
         self.client = client or httpx.Client(base_url=settings.ollama_url, timeout=120)
 
     def embed(self, texts: list[str], kind: EmbedKind) -> list[list[float]]:

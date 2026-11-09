@@ -56,3 +56,18 @@ def test_answers_and_the_audit_chain(pg: Clearline):
     with pg.store.pool.connection() as conn:
         conn.execute("UPDATE audit_log SET subject = 'someone-else' WHERE seq = 2")
     assert pg.audit.verify() == 2
+
+
+@pytest.mark.parametrize("user", sorted(DEV_USERS))
+def test_keyword_search_filters_inside_the_query(pg: Clearline, user: str):
+    principal = DEV_USERS[user]
+    hits = pg.store.keyword_search("budget tax incident passwords phishing telework travel", principal, 100)
+    assert hits, user
+    for hit in hits:
+        assert principal.can_read(hit.chunk.classification, hit.chunk.groups), (user, hit.chunk.title)
+
+
+def test_postgres_hybrid_retrieval_matches_the_memory_store(pg: Clearline, service: Clearline):
+    for question in ("How do I report a phishing email?", "How much is the daily meal allowance?"):
+        expected = service.retriever.search(question, DEV_USERS["chloe"])[0].chunk.title
+        assert pg.retriever.search(question, DEV_USERS["chloe"])[0].chunk.title == expected

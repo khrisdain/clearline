@@ -28,7 +28,11 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://clearline:clearline@localhost:5432/clearline"
     embedding_dim: int = 1024
 
-    # Retrieval: candidates pulled from the store, then reranked down to the context size.
+    # Retrieval: dense (vectors), keyword (BM25 / full text) or hybrid (both, merged with reciprocal
+    # rank fusion); `candidates` from each, then reranked down to the context size.
+    retrieval: Literal["dense", "keyword", "hybrid"] = "hybrid"
+    rerank: bool = True
+    rrf_k: int = 60
     candidates: int = 20
     context_chunks: int = 5
     min_rerank_score: float = 0.15

@@ -14,30 +14,16 @@ import math
 import re
 
 from ..models import Message, ToolCall, ToolSpec
+from ..text import terms
 from .base import EmbedKind
-
-WORD = re.compile(r"[a-z0-9]+")
-STOP = frozenset(
-    "a an and are as at be by can do does for from how i in is it of on or our the to we what when where which who "  # noqa: SIM905
-    "why with you your my me us this that there their they was were will would should could much many any".split()
-)
-
-
-def terms(text: str) -> list[str]:
-    out = []
-    for word in WORD.findall(text.lower()):
-        if word in STOP:
-            continue
-        for suffix in ("ing", "ed", "es", "s"):
-            if len(word) > 4 and word.endswith(suffix):
-                word = word[: -len(suffix)]
-                break
-        out.append(word)
-    return out
 
 
 class FakeProvider:
     name = "fake"
+    model = "offline stand-in"
+    embed_model = "hashed bag of words"
+    rerank_model = "query-term coverage"
+    native_citations = False
 
     def __init__(self, dim: int = 1024) -> None:
         self.dim = dim

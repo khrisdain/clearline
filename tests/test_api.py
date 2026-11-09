@@ -60,7 +60,10 @@ def test_unknown_dev_user_is_unauthorised(client):
 def test_the_web_page_and_its_sign_in_config_are_served(client):
     page = client.get("/")
     assert page.status_code == 200 and "<title>Clearline</title>" in page.text
-    assert client.get("/ui/config").json() == {"auth_mode": "dev", "dev_users": ["admin", "ana", "ben", "chloe"]}
+    config = client.get("/ui/config").json()
+    assert config["auth_mode"] == "dev" and config["dev_users"] == ["admin", "ana", "ben", "chloe"]
+    assert config["models"] == {"provider": "fake", "chat": "offline stand-in", "embed": "hashed bag of words",
+                                "rerank": "query-term coverage", "retrieval": "hybrid", "citations": "markers"}
 
 
 def test_me_describes_the_signed_in_user(client):
@@ -72,6 +75,7 @@ def test_the_page_signs_in_through_the_identity_provider_in_oidc_mode():
     settings = Settings(env="test", provider="fake", store="memory", auth_mode="oidc", embedding_dim=512,
                         oidc_issuer="https://sso.example.gc.ca/realms/lakeview", oidc_client_id="clearline-web")
     client = TestClient(create_app(settings, Clearline(settings), Authenticator(settings, key_for_token=lambda token: "")))
-    assert client.get("/ui/config").json() == {
-        "auth_mode": "oidc", "issuer": "https://sso.example.gc.ca/realms/lakeview", "client_id": "clearline-web"}
+    config = client.get("/ui/config").json()
+    assert (config["auth_mode"], config["issuer"], config["client_id"]) == (
+        "oidc", "https://sso.example.gc.ca/realms/lakeview", "clearline-web")
     assert client.get("/v1/me").status_code == 401
