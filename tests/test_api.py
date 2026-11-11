@@ -79,3 +79,12 @@ def test_the_page_signs_in_through_the_identity_provider_in_oidc_mode():
     assert (config["auth_mode"], config["issuer"], config["client_id"]) == (
         "oidc", "https://sso.example.gc.ca/realms/lakeview", "clearline-web")
     assert client.get("/v1/me").status_code == 401
+
+
+def test_search_steps_report_each_retrieval_stage(client):
+    body = ask(client, "How many days a week can I telework?").json()
+    [step] = [s for s in body["steps"] if s["tool"] == "search_documents"]
+    stages = step["retrieval"]
+    assert stages["dense"] > 0 and stages["keyword"] > 0 and stages["reranked"] is True
+    assert stages["kept"] == step["results"] <= stages["fused"]
+    assert body["citation_mode"] == "markers" and 0 < body["coverage"] <= 1
