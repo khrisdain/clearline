@@ -19,6 +19,18 @@ def test_rrf_rewards_agreement_between_rankings():
     assert reciprocal_rank_fusion([]) == []
 
 
+def test_rrf_ignores_raw_scores_and_a_smaller_k_sharpens_the_top():
+    a, b = chunk("a"), chunk("b")
+    # Wildly different score scales give the same fusion: only the ranks count.
+    assert [h.chunk.id for h in reciprocal_rank_fusion([[Hit(a, 1e9), Hit(b, 1e-9)]])] == ["a", "b"]
+
+    def gap(k: int) -> float:
+        first, second = reciprocal_rank_fusion([[Hit(a, 1.0), Hit(b, 0.5)]], k=k)
+        return first.score - second.score
+
+    assert gap(1) > gap(60) > 0
+
+
 def test_bm25_ranks_the_passage_with_the_rare_exact_term_first(service):
     hits = service.store.keyword_search("phishing", DEV_USERS["ben"], 5)
     assert hits and hits[0].chunk.title == "IT Security Standard"
