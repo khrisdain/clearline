@@ -64,3 +64,11 @@ def test_tool_results_go_to_cohere_as_citable_documents():
     assert doc["type"] == "document" and doc["document"]["id"] == "passage-4"
     assert doc["document"]["data"]["text"] == "Meals are $98."
     assert as_documents('{"results": []}') == '{"results": []}'
+
+
+def test_coverage_counts_overlapping_spans_once_and_ignores_spaces():
+    text = "abcd efgh"
+    both = [Span(start=0, end=4, text="abcd", markers=[1]), Span(start=2, end=4, text="cd", markers=[2])]
+    assert coverage(text, both) == 0.5  # 4 of 8 visible characters, the overlap counted once
+    assert coverage(text, both + [Span(start=4, end=9, text=" efgh", markers=[3])]) == 1.0
+    assert coverage("   ", []) == 0.0
