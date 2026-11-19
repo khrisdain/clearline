@@ -142,6 +142,7 @@
   .source-title { font-weight: 600; }
   .source-meta { font-size: 0.82rem; color: var(--muted); }
   .source-meta .level { margin-left: 0.5rem; }
+  .flagged { margin-top: 0.3rem; font-size: 0.82rem; color: var(--bad); }
   .snippet { margin-top: 0.35rem; font-family: var(--serif); font-size: 0.98rem; color: var(--text); }
 
   ol.trace { margin: 0.6rem 0 0; padding-left: 1.2rem; font-size: 0.9rem; }
@@ -541,6 +542,8 @@ async function ask() {
           el("div", {},
             el("div", {}, el("span", { class: "source-title" }, c.title)),
             el("div", { class: "source-meta" }, c.section, level(c.classification)),
+            c.flags && c.flags.length ? el("div", { class: "flagged" },
+              "Contains text addressed to an assistant (" + c.flags.join(", ") + "). Check this source before relying on it.") : null,
             el("p", { class: "snippet" }, c.snippet)))))));
     }
     if (a.steps.length) {
@@ -562,8 +565,10 @@ async function addDocument() {
   const doc = await api("/v1/documents", { method: "POST", body: JSON.stringify({
     title: $("doc-title").value, classification: $("doc-classification").value, groups, text: $("doc-text").value, source: "web",
   }) });
-  $("add-status").className = "note ok";
-  $("add-status").textContent = "Added “" + doc.title + "” as " + doc.classification + ", " + plural(doc.chunks, "passage") + ".";
+  const flagged = doc.flags && doc.flags.length;
+  $("add-status").className = flagged ? "note bad" : "note ok";
+  $("add-status").textContent = "Added “" + doc.title + "” as " + doc.classification + ", " + plural(doc.chunks, "passage") + "." +
+    (flagged ? " Warning: it contains text addressed to an assistant (" + doc.flags.join(", ") + "); answers citing it will say so." : "");
   $("add-form").reset();
 }
 

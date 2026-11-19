@@ -6,6 +6,7 @@ from .agent import Agent, Retriever
 from .audit import AuditLog, MemoryAuditLog, PostgresAuditLog
 from .config import Settings
 from .ingest import chunk_document, document_id
+from .injection import scan
 from .models import Answer, Classification, Document, DocumentIn, DocumentOut, Principal
 from .providers import Provider, build_provider
 from .redact import redact
@@ -31,10 +32,12 @@ class Clearline:
         for chunk, vector in zip(chunks, vectors, strict=True):
             chunk.embedding = vector
         self.store.upsert(document, chunks)
+        flags = scan(document.text)
         self.audit.append(actor, "ingest", {"document_id": document.id, "title": document.title,
-                                            "classification": document.classification.label, "chunks": len(chunks)})
+                                            "classification": document.classification.label, "chunks": len(chunks),
+                                            "injection_flags": flags})
         return DocumentOut(id=document.id, title=document.title, classification=document.classification.label,
-                           groups=sorted(document.groups), chunks=len(chunks))
+                           groups=sorted(document.groups), chunks=len(chunks), flags=flags)
 
     def ingest_input(self, body: DocumentIn, actor: str) -> DocumentOut:
         document = Document(
@@ -51,5 +54,6 @@ class Clearline:
             "cited_documents": sorted({c.document_id for c in answer.citations}),
             "searches": sum(1 for s in answer.steps if s.tool == "search_documents"),
             "grounded": answer.grounded, "latency_ms": answer.latency_ms,
+            "flagged_citations": sorted({c.document_id for c in answer.citations if c.flags}),
         })
         return answer

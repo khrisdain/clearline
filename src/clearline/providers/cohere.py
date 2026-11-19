@@ -122,4 +122,4 @@ def as_documents(content: str) -> str | list[dict[str, Any]]:
         return content
     return [{"type": "document", "document": {"id": f"passage-{r['marker']}", "data": {
         "title": r["title"], "section": r["section"], "classification": r["classification"], "text": r["text"],
-        "document_id": r["document_id"]}}} for r in results]
+        "document_id": r["document_id"], **({"warning": r["warning"]} if "warning" in r else {})}}} for r in results]

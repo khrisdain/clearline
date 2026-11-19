@@ -134,6 +134,7 @@ class DocumentOut(BaseModel):
     classification: str
     groups: list[str]
     chunks: int
+    flags: list[str] = Field(default_factory=list)  # instruction-like text found when it was ingested
 
 
 class AskIn(BaseModel):
@@ -147,6 +148,7 @@ class Citation(BaseModel):
     section: str
     classification: str
     snippet: str
+    flags: list[str] = Field(default_factory=list)  # instruction-like text found in the passage (injection.scan)
 
 
 class Step(BaseModel):
